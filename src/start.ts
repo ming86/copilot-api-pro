@@ -245,7 +245,7 @@ export const start = defineCommand({
       description:
         "Generate a command to launch Claude Code with Copilot API config",
     },
-    "claude-code-reset": {
+    reset: {
       type: "boolean",
       default: false,
       description:
@@ -288,7 +288,7 @@ export const start = defineCommand({
       rateLimitWait: args.wait,
       githubToken: args["github-token"],
       claudeCode: args["claude-code"],
-      claudeCodeReset: args["claude-code-reset"],
+      claudeCodeReset: args.reset,
       codex: args.codex,
       showToken: args["show-token"],
       proxyEnv: args["proxy-env"],

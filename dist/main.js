@@ -1587,7 +1587,7 @@ const start = defineCommand({
 			default: false,
 			description: "Generate a command to launch Claude Code with Copilot API config"
 		},
-		"claude-code-reset": {
+		reset: {
 			type: "boolean",
 			default: false,
 			description: "Force re-select Claude Code models and overwrite stored config"
@@ -1625,7 +1625,7 @@ const start = defineCommand({
 			rateLimitWait: args.wait,
 			githubToken: args["github-token"],
 			claudeCode: args["claude-code"],
-			claudeCodeReset: args["claude-code-reset"],
+			claudeCodeReset: args.reset,
 			codex: args.codex,
 			showToken: args["show-token"],
 			proxyEnv: args["proxy-env"],
@@ -1696,7 +1696,7 @@ const stop = defineCommand({
 //#region src/main.ts
 const main = defineCommand({
 	meta: {
-		name: "copilot-api",
+		name: "copilot-api-pro",
 		description: "A wrapper around GitHub Copilot API to make it OpenAI compatible, making it usable for other tools."
 	},
 	subCommands: {

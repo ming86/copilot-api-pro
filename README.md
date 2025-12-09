@@ -1,55 +1,79 @@
 # Copilot API Pro
 
-> [!NOTE]
-> This is a fork of [ericc-ch/copilot-api](https://github.com/ericc-ch/copilot-api). The package/CLI name is **copilot-api-pro** (`npx copilot-api-pro@latest start`).  
-> Highlights of this fork:  
-> - Native OpenAI `/v1/responses` support (latest GPT models such as gpt-5.1-codex).  
-> - Persisted Claude Code model selection, daemon start/stop commands, non-interactive startup.  
-> - Improved error handling for Copilot responses and daemon management.
-> - bug fixes
+Fork of [ericc-ch/copilot-api](https://github.com/ericc-ch/copilot-api) that adds OpenAI `/v1/responses`, persistent Claude Code model selection, daemon-friendly start/stop, and tighter error handling. CLI name: `copilot-api-pro`.
 
-> [!WARNING]
-> This is a reverse-engineered proxy of GitHub Copilot API. It is not supported by GitHub, and may break unexpectedly. Use at your own risk.
+> This is a reverse-engineered proxy of GitHub Copilot. It is unofficial and may break at any time.
 
-> [!WARNING]
-> **GitHub Security Notice:**  
-> Excessive automated or scripted use of Copilot (including rapid or bulk requests, such as via automated tools) may trigger GitHub's abuse-detection systems.  
-> You may receive a warning from GitHub Security, and further anomalous activity could result in temporary suspension of your Copilot access.
->
-> GitHub prohibits use of their servers for excessive automated bulk activity or any activity that places undue burden on their infrastructure.
->
-> Please review:
->
-> - [GitHub Acceptable Use Policies](https://docs.github.com/site-policy/acceptable-use-policies/github-acceptable-use-policies#4-spam-and-inauthentic-activity-on-github)
-> - [GitHub Copilot Terms](https://docs.github.com/site-policy/github-terms/github-terms-for-additional-products-and-features#github-copilot)
->
-> Use this proxy responsibly to avoid account restrictions.
+## Highlights
+- OpenAI-compatible endpoints (including `/v1/responses` for GPT-4.1 / gpt-5.1-codex) and Anthropic-compatible `/v1/messages`.
+- One-shot Claude Code setup: select models once, persist them, and reuse with `--daemon`.
+- Codex CLI helper: generates `wire_api=responses` command for Codex.
+- Manual approval and rate-limit guard rails to reduce Copilot abuse flags.
+- Background daemon with `start --daemon` and `stop`.
 
-CLI: `npx copilot-api-pro@latest start`
+## Requirements
+- Bun 1.0+ recommended.
+- A GitHub Copilot account (individual, business, or enterprise).
+- Files are stored under `~/.local/share/copilot-api` (tokens, Claude Code config, daemon pid).
 
-Quick start
+## Quick start
 ```sh
-npx copilot-api-pro@latest start             # 前台
-npx copilot-api-pro@latest start --daemon    # 后台
-npx copilot-api-pro@latest stop              # 停止后台
-npx copilot-api-pro@latest start --claude-code  # 生成 Claude Code 命令并保存模型
-npx copilot-api-pro@latest start --codex        # 生成 Codex 命令 (responses)
-npx copilot-api-pro@latest check-usage          # 查看用量
-```
-
-Quick start
-```sh
-# 前台 / 后台
+# Foreground / background
 npx copilot-api-pro@latest start
 npx copilot-api-pro@latest start --daemon
 npx copilot-api-pro@latest stop
 
-# Claude Code（选择并保存模型，复制命令）
+# Claude Code (select & persist models, copy command)
 npx copilot-api-pro@latest start --claude-code
 
-# Codex（生成 wire_api=responses 命令）
+# Reset Claude Code selection
+npx copilot-api-pro@latest start --claude-code --reset
+
+# Codex (generate wire_api=responses command)
 npx copilot-api-pro@latest start --codex
 
-# 查看用量
+# Show usage
 npx copilot-api-pro@latest check-usage
 ```
+
+## Help
+`npx copilot-api-pro@latest --help` shows the command list (command name is `copilot-api-pro`):
+```
+USAGE copilot-api-pro auth|start|stop|check-usage|debug
+
+COMMANDS
+        auth         Run GitHub auth flow without running the server
+        start        Start the Copilot API server
+        stop         Stop the background Copilot API server started with --daemon
+        check-usage  Show current GitHub Copilot usage/quota information
+        debug        Print debug information about the application
+```
+
+## CLI
+- `start` – start the server. Common flags: `-p/--port` (default 4141), `-a/--account-type` (`individual|business|enterprise`), `--manual`, `-r/--rate-limit <sec>`, `--wait`, `-g/--github-token <token>`, `--proxy-env`, `--claude-code`, `--reset`, `--codex`, `--daemon`, `--show-token`, `-v/--verbose`.
+- `auth` – run GitHub auth flow only (writes token).
+- `stop` – stop the `--daemon` background process.
+- `check-usage` – print Copilot usage/quotas.
+- `debug` – print version/runtime/path info (`--json` available).
+
+## API surface
+- OpenAI: `/v1/chat/completions`, `/v1/embeddings`, `/v1/models`, `/v1/responses`.
+- Anthropic: `/v1/messages`, `/v1/messages/count_tokens`.
+- Usage: `/usage`, token debug: `/token`.
+- Usage Viewer: `https://ericc-ch.github.io/copilot-api?endpoint=http://localhost:4141/usage`.
+
+## Tips
+- Rate-limit safety: `--manual` or `--rate-limit 30 --wait` helps avoid abuse flags.
+- Proxy: `--proxy-env` reads `HTTP_PROXY` / `HTTPS_PROXY` env vars.
+- Reset Claude Code selection: `start --claude-code --reset`.
+
+## Caveats & safety
+- This tool depends on unofficial Copilot endpoints; GitHub can change or block them at any time.
+- Heavy or automated use may trigger GitHub security/abuse protections; use at your own risk.
+- Please comply with:
+  - [GitHub Acceptable Use Policies](https://docs.github.com/site-policy/acceptable-use-policies/github-acceptable-use-policies#4-spam-and-inauthentic-activity-on-github)
+  - [GitHub Copilot Terms](https://docs.github.com/site-policy/github-terms/github-terms-for-additional-products-and-features#github-copilot)
+
+---
+
+README structure inspired by [smart-suggestion](https://github.com/yetone/smart-suggestion).
