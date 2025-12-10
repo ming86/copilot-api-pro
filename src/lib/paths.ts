@@ -6,18 +6,21 @@ const APP_DIR = path.join(os.homedir(), ".local", "share", "copilot-api")
 
 const GITHUB_TOKEN_PATH = path.join(APP_DIR, "github_token")
 const CLAUDE_CODE_CONFIG_PATH = path.join(APP_DIR, "claude-code.json")
+const CODEX_CONFIG_PATH = path.join(APP_DIR, "codex.json")
 const PID_PATH = path.join(APP_DIR, "server.pid")
 
 export const PATHS = {
   APP_DIR,
   GITHUB_TOKEN_PATH,
   CLAUDE_CODE_CONFIG_PATH,
+  CODEX_CONFIG_PATH,
   PID_PATH,
 }
 
 export async function ensurePaths(): Promise<void> {
   await fs.mkdir(PATHS.APP_DIR, { recursive: true })
   await ensureFile(PATHS.GITHUB_TOKEN_PATH)
+  await ensureFile(PATHS.CODEX_CONFIG_PATH)
 }
 
 async function ensureFile(filePath: string): Promise<void> {

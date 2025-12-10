@@ -196,15 +196,28 @@ async function prepareDaemon(
 
   if (options.codex) {
     invariant(state.models, "Models should be loaded by now")
-    const selectedModel = await consola.prompt(
-      "Select a model to use with Codex",
-      {
+    const storedCodex = await loadCodexConfig()
+    const hasStored =
+      storedCodex !== null
+      && state.models.data.some((model) => model.id === storedCodex.model)
+
+    const envCodexModel =
+      options.claudeCodeReset ? null : (
+        (process.env.COPILOT_API_CODEX_MODEL
+        ?? (hasStored ? storedCodex.model : null))
+      )
+
+    const selectedModel =
+      envCodexModel
+      ?? (await consola.prompt("Select a model to use with Codex", {
         type: "select",
         options: state.models.data.map((model) => model.id),
-      },
-    )
+      }))
 
     envExtras.COPILOT_API_CODEX_MODEL = selectedModel
+    if (!hasStored || options.claudeCodeReset) {
+      await saveCodexConfig({ model: selectedModel })
+    }
 
     const codexCommand = buildCodexCommand(serverUrl, selectedModel)
 
@@ -329,8 +342,15 @@ async function handleClaudeCode(options: RunServerOptions, serverUrl: string) {
 async function handleCodex(options: RunServerOptions, serverUrl: string) {
   invariant(state.models, "Models should be loaded by now")
 
+  const stored = await loadCodexConfig()
+  const hasStored =
+    stored !== null
+    && state.models.data.some((model) => model.id === stored.model)
+
   const envCodexModel =
-    options.claudeCodeReset ? null : process.env.COPILOT_API_CODEX_MODEL
+    options.claudeCodeReset ? null : (
+      (process.env.COPILOT_API_CODEX_MODEL ?? (hasStored ? stored.model : null))
+    )
 
   const selectedModel =
     envCodexModel
@@ -338,6 +358,10 @@ async function handleCodex(options: RunServerOptions, serverUrl: string) {
       type: "select",
       options: state.models.data.map((model) => model.id),
     }))
+
+  if (!hasStored || options.claudeCodeReset) {
+    await saveCodexConfig({ model: selectedModel })
+  }
 
   const codexCommand = buildCodexCommand(serverUrl, selectedModel)
 
@@ -504,9 +528,17 @@ export const start = defineCommand({
         env: { ...process.env, COPILOT_API_IS_DAEMON: "1", ...envExtras },
       })
 
-      await fs.writeFile(PATHS.PID_PATH, String(child.pid))
+      const childPid = Number(child.pid)
+      if (!Number.isFinite(childPid)) {
+        consola.error("Failed to determine daemon pid; not writing pid file.")
+        process.exit(1)
+      }
+
+      const pidString = `${childPid}`
+      await fs.writeFile(PATHS.PID_PATH, pidString, "utf8")
+
       consola.info(
-        `Copilot API server is starting in the background (pid ${child.pid}).`,
+        `Copilot API server is starting in the background (pid ${childPid}).`,
       )
       child.unref()
       // Ensure parent process exits after spawning daemon
@@ -520,6 +552,10 @@ export const start = defineCommand({
 interface ClaudeCodeConfig {
   model: string
   smallModel: string
+}
+
+interface CodexConfig {
+  model: string
 }
 
 const loadClaudeCodeConfig = async (): Promise<ClaudeCodeConfig | null> => {
@@ -545,4 +581,18 @@ const clearClaudeCodeConfig = async () => {
   } catch {
     // ignore
   }
+}
+
+const loadCodexConfig = async (): Promise<CodexConfig | null> => {
+  try {
+    const content = await fs.readFile(PATHS.CODEX_CONFIG_PATH, "utf8")
+    if (!content) return null
+    return JSON.parse(content) as CodexConfig
+  } catch {
+    return null
+  }
+}
+
+const saveCodexConfig = async (config: CodexConfig) => {
+  await fs.writeFile(PATHS.CODEX_CONFIG_PATH, JSON.stringify(config, null, 2))
 }
